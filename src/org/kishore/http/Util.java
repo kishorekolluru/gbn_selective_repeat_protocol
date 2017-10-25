@@ -1,5 +1,11 @@
 package org.kishore.http;
 
+import java.net.DatagramPacket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by kishorekolluru on 10/21/17.
  */
@@ -17,59 +23,48 @@ public class Util {
         return -1;
     }
 
-    public static String checksumString(byte[] bytes) {
-        String checksum = Long.toBinaryString(calculateChecksum(bytes));
-        int num0s = 16 - checksum.length();
-        String zeros = "";
-        for(int i=0; i<num0s; i++){
-            zeros += "0";
+    public static String checksumString(byte[] bytes){
+        try {
+            return calculateChecksum(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
         }
-        checksum = zeros + checksum;
-        return checksum;
+        return null;
     }
 
-    private static long calculateChecksum(byte[] buf) {
-        int length = buf.length;
-        int i = 0;
-
-        long sum = 0;
-        long data;
-
-        // Handle all pairs
-        while (length > 1) {
-            // Corrected to include @Andy's edits and various comments on Stack Overflow
-            data = (((buf[i] << 8) & 0xFF00) | ((buf[i + 1]) & 0xFF));
-            sum += data;
-            // 1's complement carry bit correction in 16-bits (detecting sign extension)
-            if ((sum & 0xFFFF0000) > 0) {
-                sum = sum & 0xFFFF;
-                sum += 1;
-            }
-
-            i += 2;
-            length -= 2;
+    private static String calculateChecksum(byte[] buf) throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(buf);
+        byte[] byteData = md.digest();
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < byteData.length; i++) {
+            sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
         }
-
-        // Handle remaining byte in odd length buffers
-        if (length > 0) {
-            // Corrected to include @Andy's edits and various comments on Stack Overflow
-            sum += (buf[i] << 8 & 0xFF00);
-            // 1's complement carry bit correction in 16-bits (detecting sign extension)
-            if ((sum & 0xFFFF0000) > 0) {
-                sum = sum & 0xFFFF;
-                sum += 1;
-            }
-        }
-
-        // Final 1's complement value correction to 16-bits
-        sum = ~sum;
-        sum = sum & 0xFFFF;
-//        System.out.println("Sum "+sum);
-        return sum;
-
+        return sb.toString();
     }
 
-    public static void main(String[] args) {
+    public static boolean isNotCorrupt(DatagramPacket packet) {
+        List<String> paylArr = extractMsg(packet);
+        String computedChecksum = Util.checksumString(paylArr.get(2).getBytes());
+        return computedChecksum.equals(paylArr.get(0));
+    }
+
+    public static List<String> extractMsg(DatagramPacket packet) {
+        String payl = new String(packet.getData());
+        List<String> strList = new ArrayList<>();
+        int firstSpaceInd = payl.indexOf(' ');
+        int secSpaceInd = payl.indexOf(' ', firstSpaceInd + 1);
+        //checksum
+        strList.add(payl.substring(0, firstSpaceInd));
+        //seqNum
+        strList.add(payl.substring(firstSpaceInd + 1, secSpaceInd));
+        //payload
+        strList.add(payl.substring(secSpaceInd + 1));
+
+        return strList;
+    }
+
+    public static void main(String[] args) throws NoSuchAlgorithmException {
         System.out.println(checksumString("hi there!".getBytes()));
         System.out.println(renderSeqNbrForTransport(4, 8));
     }
@@ -84,5 +79,33 @@ public class Util {
 //        System.out.println(String.valueOf((int) Math.pow(2, m)).length());
         String format = "%0"+ String.valueOf((int) Math.pow(2, m)).length() +"d";
        return String.format(format, getSeqNum(sBase, m));
+    }
+
+    public static byte[] byteObjectToByteArray(Byte[] byteObjects) {
+        int j=0;
+        byte[] bytes = new byte[byteObjects.length];
+        // Unboxing byte values. (Byte[] to byte[])
+        for(Byte b: byteObjects)
+            bytes[j++] = b.byteValue();
+        return bytes;
+    }
+
+    public static List<Byte[]> initializeDataArray(String msg, int payloadSize) {
+        List<Byte[]> dataList = new ArrayList<>();
+        byte[] msgBytes = msg.getBytes();
+        List<Byte> byteSeg = new ArrayList<>();
+        int msgPartSize = payloadSize;
+//        int msgPartSize = segSize - 17 - String.valueOf((int)Math.pow(2,m)).length();
+        System.out.println("Message part size = "+msgPartSize);
+
+        //split the msg bytes into msgpartsize segments
+        for (int i = 0; i < msgBytes.length; i++) {
+            byteSeg.add(msgBytes[i]);
+            if (byteSeg.size() == msgPartSize || i == msgBytes.length - 1){
+                dataList.add(byteSeg.toArray(new Byte[0]));
+                byteSeg.clear();
+            }
+        }
+        return dataList;
     }
 }
