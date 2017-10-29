@@ -4,6 +4,7 @@ import java.net.DatagramPacket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -33,6 +34,11 @@ public class Util {
     }
 
     private static String calculateChecksum(byte[] buf) throws NoSuchAlgorithmException {
+        int j = buf.length-1;
+        while( j>=0 && buf[j]==0)
+            j--;
+        buf = Arrays.copyOf(buf, j);
+
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.update(buf);
         byte[] byteData = md.digest();
@@ -44,29 +50,36 @@ public class Util {
     }
 
     public static boolean isNotCorrupt(DatagramPacket packet) {
-        List<String> paylArr = extractMsg(packet);
-        String computedChecksum = Util.checksumString(paylArr.get(2).getBytes());
-        return computedChecksum.equals(paylArr.get(0));
+        PipelinedProtocolRunner.Segment segment = extractSegment(packet);
+//        System.err.println("STRING :" + new String(segment.getData()));
+        String computedChecksum = checksumString(segment.getData());
+        return computedChecksum.equals(segment.getChecksum());
     }
 
-    public static List<String> extractMsg(DatagramPacket packet) {
+    public static PipelinedProtocolRunner.Segment extractSegment(DatagramPacket packet) {
         String payl = new String(packet.getData());
         List<String> strList = new ArrayList<>();
         int firstSpaceInd = payl.indexOf(' ');
         int secSpaceInd = payl.indexOf(' ', firstSpaceInd + 1);
         //checksum
-        strList.add(payl.substring(0, firstSpaceInd));
+        payl.substring(0, firstSpaceInd);
         //seqNum
-        strList.add(payl.substring(firstSpaceInd + 1, secSpaceInd));
+        payl.substring(firstSpaceInd + 1, secSpaceInd);
         //payload
-        strList.add(payl.substring(secSpaceInd + 1));
+        payl.substring(secSpaceInd + 1);
 
-        return strList;
+        PipelinedProtocolRunner.Segment segment = new PipelinedProtocolRunner.Segment(
+                payl.substring(secSpaceInd + 1).getBytes(),
+                Integer.parseInt(payl.substring(firstSpaceInd + 1, secSpaceInd)),
+                payl.substring(0, firstSpaceInd));
+        return segment;
     }
 
     public static void main(String[] args) throws NoSuchAlgorithmException {
-        System.out.println(checksumString("hi there!".getBytes()));
-        System.out.println(renderSeqNbrForTransport(4, 8));
+        System.out.println(checksumString("this is a fd".getBytes()));
+        System.out.println(checksumString("this is a f5".getBytes()));
+        System.out.println(renderSeqNbrForTransport(0, 4));
+
     }
     public static byte corruptByte(byte b){
         //shift left random number of bits
@@ -74,11 +87,11 @@ public class Util {
 //        return (byte)(b | 1 << (int)(Math.random()*8));
     }
 
-    public static String renderSeqNbrForTransport(int sBase, int m) {
+    public static String renderSeqNbrForTransport(int act, int m) {
         //convert the sbase actual number to seq num for transport and prepend with leading 0's if applicable (for exampl %03d)
 //        System.out.println(String.valueOf((int) Math.pow(2, m)).length());
-        String format = "%0"+ String.valueOf((int) Math.pow(2, m)).length() +"d";
-       return String.format(format, getSeqNum(sBase, m));
+        String format = "%0"+ String.valueOf((int)Math.pow(2,m)).length() +"d";
+       return String.format(format, act);
     }
 
     public static byte[] byteObjectToByteArray(Byte[] byteObjects) {

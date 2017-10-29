@@ -1,6 +1,5 @@
 package org.kishore.http;
 
-import javax.swing.text.Segment;
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
@@ -13,15 +12,20 @@ import static org.kishore.http.PipelinedProtocolRunner.host;
 public class PipelinedProtocolRunner {
     public static final String host = "localhost";
     public static int m;
-    public static int N;
-    public static void main(String[] args) {
-        String msg = "THis is a message.Why do all this crap? This is implementation agnostic.";// One day, you might want to use this convenience on another implementation. Then you'll have to duplicate code, and hell begins. If you need a 3rd implementation too, and then add just one tiny bit of new functionality, you are doomed.";
-        m = 3;
-        N = 8;
-        int segSize = 46;
-        int timeout = 500;
-        int port = 5001;
+    public static int WINDOW_SIZE;
+    public static int seqNumRenderLength;
+    private static final double PROBABILITY_PKT_LOSS = 0.1;
 
+//    public static int datalistSize = -1;
+    public static void main(String[] args) {
+        String msg = "THis is a message.Why do all this crap? This is implementation agnostic. One day, you might want to use this convenience on another implementation. Then you'll have to duplicate code, and hell begins. If you need a 3rd implementation too, and then add just one tiny bit of new functionality, you are doomed.";
+        m = 3;
+        WINDOW_SIZE = 8;
+
+        int segSize = 46;
+        int timeout = 1000;
+        int port = 5001;
+        seqNumRenderLength = String.valueOf((int)Math.pow(2, m)).length();
         try {
             GBNSender gbn = new GBNSender(port, msg, timeout, segSize);
             GBNReceiver gbnReceiver = new GBNReceiver(port, segSize);
@@ -39,13 +43,11 @@ public class PipelinedProtocolRunner {
         }
 
     }
-    static Map<Long, String> soutMap = Collections.synchronizedMap(new TreeMap<>());
+    static Map<Long, String> soutSenderMap = Collections.synchronizedMap(new TreeMap<>());
+    static Map<Long, String> soutRcrMap = Collections.synchronizedMap(new TreeMap<>());
 
-    public static void putIntoSmap(String str){
-        soutMap.put(System.currentTimeMillis(), str);
-        System.out.println(str);
-    }
     static class GBNSender implements Runnable{
+
         private final int port;
         private final int timeoutms;
         private final int segSize;
@@ -53,42 +55,52 @@ public class PipelinedProtocolRunner {
         private int windActEnd;
         private int windActStart;
         private String msg;
-        private int sBase;
-        private int sNextSeq;
+        private int lastAcked;
+        private int lastSent;
         private int payloadSize;
         //Data
         private List<Byte[]> dataList = new ArrayList<>();
-        DatagramSocket socket;
+        DatagramSocket toReceiver;
         Timer timer;
         private int flag = 0;
 
+        public static void putIntoSmap(String str){
+            soutSenderMap.put(System.currentTimeMillis(), str);
+            System.out.println(str);
+        }
         public GBNSender(int port, String msg, int timeoutms, int segSize) throws Exception {
             try {
                 this.port = port;
                 this.msg = msg;
                 this.windActStart = 0;
-                this.windActEnd = N - 1;
-                this.sBase = 0;
-                this.sNextSeq = 0;
+                this.windActEnd = WINDOW_SIZE - 1;
+                this.lastAcked = 0;
+                this.lastSent = 0;
                 this.timeoutms = timeoutms;
+
                 this.segSize = segSize;
-                //<checksum 16,1 space, 2^m number of digits, 1 space
-                int sz = 32 + 1 + String.valueOf((int) Math.pow(2, m)).length() +1;
+                this.ackSegSize = 32+ 1 + seqNumRenderLength;
+
+                //<checksum 16,1 space, list size digits length, 1 space
+                int sz = 32 + 1 + seqNumRenderLength +1;
                 this.payloadSize = segSize - sz;
                 if (this.payloadSize < 1) {
                     throw new Exception("The segment size has to be a min of " +sz);
                 }
-                socket = new DatagramSocket();
+
+                toReceiver = new DatagramSocket();
             } catch (Exception e) {
                 throw e;
             }
-            this.ackSegSize = 32+ 1 + String.valueOf((int) Math.pow(2, m)).length();
         }
 
         @Override
         public void run() {
             System.out.println("Initializing data array...");
+
             dataList = Util.initializeDataArray(msg, payloadSize);
+//            datalistSize = dataList.size();
+            System.out.println("TOTAL packets :"+dataList.size());
             try {
                 while (!isDataDone) {
                     //send one window
@@ -96,7 +108,7 @@ public class PipelinedProtocolRunner {
                 }
                 System.out.println("Data reliably sent using GBN protocol!!");
                 //end connection
-                socket.send(new DatagramPacket("end".getBytes(), "end".getBytes().length, InetAddress.getByName(host), port));
+                toReceiver.send(new DatagramPacket("end".getBytes(), "end".getBytes().length, InetAddress.getByName(host), port));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -107,64 +119,86 @@ public class PipelinedProtocolRunner {
         private void sendWindow() throws IOException {
 
             //send eligible current window packets
-            sendPackets(socket, false);
+            sendPackets();
 
             //wait for ack
             DatagramPacket packet = new DatagramPacket(new byte[ackSegSize], ackSegSize);
-            socket.receive(packet);
+            toReceiver.receive(packet);
+
             //ackNum = next expected seqNum
             int ackNum = checksumAndGetAckNum(packet.getData());
-            int newBase = Util.getSeqNum(ackNum, m);
+//            int newBase = Util.getSeqNum(ackNum, m);
 
             //if ack corrupt or repeatAck then ignore packet
-            if (ackNum == -1 || newBase == (sBase % Math.pow(2, m)))
+            if (ackNum == -1 || ackNum == (lastAcked % Math.pow(2, m)))
                 return;
 
-            sBase = Util.getActualWindowSeqNum(newBase, windActStart, windActEnd, m);
+//            lastAcked = Util.getActualWindowSeqNum(ackNum, windActStart, windActEnd, m);
+            lastAcked = Util.getActualWindowSeqNum(ackNum, windActStart, windActEnd, m);
             //get the actual value till where the window has to slide
-            windActStart = sBase;
-            windActEnd = windActStart + N - 1;
+            windActStart = lastAcked;
+            windActEnd = windActStart + WINDOW_SIZE - 1;
 
             //if all data sent and acked
-            if (windActStart > dataList.size()) {
+            if (windActStart >= dataList.size()) {
                 isDataDone = true;
             }
 
             //if nothing in flight
-            if (sBase == sNextSeq) {
+            if (lastAcked == lastSent) {
                 stopTimer();
-            } else {//start new timer for new sBase
+            } else {//start new timer for new lastAcked
                 resetTimer();
             }
 
         }
 
-        private void sendPackets(DatagramSocket socket, boolean retransmit) throws IOException {
-            for(int i=windActStart; i<=windActEnd && i<dataList.size() ; i++){
-                if(!retransmit && sNextSeq == windActStart+N)
-                    break;
-                Segment segment = new Segment(Util.byteObjectToByteArray(dataList.get(i)), sNextSeq);
-                sendPacket(i, segSize, host, socket, port, segment);
-
+        private void sendPackets() throws IOException {
+//            for(int i=windActStart; i<=windActEnd && i<dataList.size() ; i++){
+            while(this.lastSent < dataList.size() && lastSent - lastAcked < WINDOW_SIZE){
+                Segment segment = new Segment(Util.byteObjectToByteArray(
+                        dataList.get(lastSent)),
+                        Util.getSeqNum(lastSent,m),
+                        Util.checksumString(Util.byteObjectToByteArray(dataList.get(lastSent))));
+                sendPacket(lastSent, segSize, host, toReceiver, port, segment);
+//                System.out.println("STRING :" + new String(Util.byteObjectToByteArray(dataList.get(lastSent))));
                 //if no in flight packets then there is no timer running
-                if(sBase == sNextSeq){
+                if(lastAcked == lastSent){
                     startTimer();
                 }
-                sNextSeq++;
+                lastSent++;
             }
         }
 
-        private void sendPacket(int i, int segSize, String host, DatagramSocket socket, int port, Segment segment) throws IOException {
-            DatagramPacket dgpacket = new DatagramPacket(segment.renderFullSgmnt(), Math.min(segSize,segment.renderFullSgmnt().length));
+        private void resendPackets(DatagramSocket toReceiverTimer) throws IOException {
+            int i = windActStart;
+            while(i < lastSent){
+                Segment segment = new Segment(
+                        Util.byteObjectToByteArray(dataList.get(i)),
+                        Util.getSeqNum(i,m),
+                        Util.checksumString(Util.byteObjectToByteArray(dataList.get(i))));
+
+                sendPacket(i, segSize, host, toReceiverTimer, port, segment);
+                i++;
+            }
+        }
+        private void sendPacket(int nexSeq, int segSize, String host, DatagramSocket socket, int port, Segment segment) throws IOException {
+            DatagramPacket dgpacket = new DatagramPacket(
+                    segment.renderFullSgmnt(),
+                    Math.min(segSize,segment.renderFullSgmnt().length));
             dgpacket.setPort(port);
             dgpacket.setAddress(InetAddress.getByName(host));
 
-            putIntoSmap("SENDER:: SENDING PACKET "+Util.getSeqNum(sNextSeq,m)+":"+new String(segment.renderFullSgmnt()));
-            if(i==3 && flag==0){
-                flag++;
-                return;
+            putIntoSmap("SENDING PACKET " + segment);
+//            if(nexSeq == 3 && flag==0){
+//                flag++;
+//                return;
+//            }
+            if(Math.random() > PROBABILITY_PKT_LOSS){
+                socket.send(dgpacket);
+            }else{
+                System.out.println("PKT LOSS "+segment.getSeqNbr());
             }
-            socket.send(dgpacket);
         }
 
         private void startTimer(){
@@ -174,8 +208,9 @@ public class PipelinedProtocolRunner {
             public void run() {
                 try {
                     DatagramSocket timerSocket = new DatagramSocket();
-                    sendPackets(timerSocket, true);
-                    System.err.println("TIMEOUT ACTION fired");
+//                    sendPackets();
+                    resendPackets(timerSocket);
+                    System.err.println("TIMEOUT fired");
                 } catch (IOException e) {
                     System.out.println("Exception during timeout resend");
                     e.printStackTrace();
@@ -196,7 +231,7 @@ public class PipelinedProtocolRunner {
         //acks of form <checksum><space><ackNum>
         private int checksumAndGetAckNum(byte[] data) {
             String ack = new String(data);
-            putIntoSmap("SENDER:: Checking ACK " + ack);
+            putIntoSmap("Checking ACK " + ack);
             int ackNum = -1;
 
             byte[] databytes = ack.split(" ")[1].getBytes();
@@ -213,7 +248,7 @@ public class PipelinedProtocolRunner {
     static class GBNReceiver implements Runnable{
         private final int port;
         private final int segSize;
-        private final int ackSegSize;
+        private int ackSegSize;
         private int senderPort;
         private InetAddress senderAddr;
 
@@ -233,34 +268,45 @@ public class PipelinedProtocolRunner {
             this.payload = "";
             this.senderAddr = null;
             this.senderPort = -1;
-            this.ackSegSize = 32 +1 + String.valueOf((int) Math.pow(2, m)).length();
+            //32 bytes for chksum, space, acknum
+            this.ackSegSize = 32 +1 + seqNumRenderLength;
+        }
+
+        public static void putIntoSmap(String str){
+            soutRcrMap.put(System.currentTimeMillis(), str);
+            System.out.println(str);
         }
 
         @Override
         public void run() {
             while(true){
                 DatagramPacket packet = new DatagramPacket(new byte[segSize], segSize);
+                this.ackSegSize = 32 +1 + seqNumRenderLength;
+
                 try {
                     socket.receive(packet);
-                    putIntoSmap("RCVR  :: DATA RECEIVED "+new String(packet.getData()));
-                    // frst time received only
-
                     if(new String(packet.getData()).startsWith("end")){
                         break;
                     }
+                    putIntoSmap("DATA RECEIVED " + Util.extractSegment(packet));
+                    // frst time received only
+
 
                     if(senderAddr==null && senderPort==-1){
                         senderAddr = packet.getAddress();
                         senderPort = packet.getPort();
                     }
+                    if(new String(packet.getData()).contains("ion.")){
 
+                    }
                     //check if new packet is expected. If not, send the old ack
                     if(Util.isNotCorrupt(packet) && isExpectedSeqNum(packet)){
-                        List<String> paylArr = Util.extractMsg(packet);
-                        String msg = paylArr.get(2);
+                        Segment segment = Util.extractSegment(packet);
+                        String msg = new String(segment.getData());
 //                        System.err.println("RECEIVED PACKET "+ rcvrBase+" :"+ msg);
                         rcvrBase++;
                         expSeqNum = Util.getSeqNum(rcvrBase, m);//expNum++
+//                        expSeqNum++;
                     }
 
                     sendAck(expSeqNum);
@@ -273,49 +319,51 @@ public class PipelinedProtocolRunner {
 
 
         private boolean isExpectedSeqNum(DatagramPacket packet) {
-            List<String> paylList = Util.extractMsg(packet);
-            return Integer.parseInt(paylList.get(1)) == expSeqNum;
+            Segment segment = Util.extractSegment(packet);
+            return segment.getSeqNbr() == expSeqNum;
         }
 
         private void sendAck(int packetNum) throws IOException {
-            payload = Util.checksumString(String.valueOf(packetNum).getBytes())
+            payload = Util.checksumString(Util.renderSeqNbrForTransport(packetNum, m).getBytes())
                     +" "
                     +Util.renderSeqNbrForTransport(packetNum, m);
-            DatagramPacket packet = createAckPacket(payload);
+            this.ackSegSize = 32 +1 + seqNumRenderLength;
+            DatagramPacket packet = createAck(payload);
             //TODO loss logic
-            putIntoSmap("RCVR  :: ACK sent "+payload);
+            putIntoSmap("ACK sent "+packetNum);
             socket.send(packet);
         }
 
-        private DatagramPacket createAckPacket(String payload) {
+        private DatagramPacket createAck(String payload) {
             return new DatagramPacket(payload.getBytes(), ackSegSize,
                     senderAddr, senderPort);
         }
     }
 
     static class Segment {
-        private String checksum;
-        private byte[] data;
-        private int seqNbr;
+        protected String checksum;
+        protected byte[] data;
+        protected int seqNbr;
 
-        public Segment(byte[] data, int seqNbr) {
+        public Segment(byte[] data, int seqNbr, String checksum) {
             this.data = data;
             this.seqNbr = seqNbr;
+            this.checksum = checksum;
         }
 
         public byte[] renderFullSgmnt(){
             StringBuilder builder = new StringBuilder();
-            builder.append(getChecksum())
+
+            String format = "%0"+ seqNumRenderLength +"d";
+
+            builder.append(checksum)
                     .append(' ')
-                    .append(Util.renderSeqNbrForTransport(Util.getSeqNum(this.seqNbr, m),m))
+                    .append(String.format(format, seqNbr))
                     .append(' ')
                     .append(new String(this.data));
             return builder.toString().getBytes();
         }
         public String getChecksum() {
-            if (checksum == null) {
-                checksum = Util.checksumString(data);
-            }
             return checksum;
         }
 
@@ -339,7 +387,78 @@ public class PipelinedProtocolRunner {
             this.seqNbr = seqNbr;
         }
 
+        @Override
+        public String toString() {
+            return seqNbr + "\t" + new String(data);
+        }
     }
+
+
+
+
+
+
+
+
+
+
+    static class SrSegment extends Segment{
+        private InetAddress addr;
+        private int port;
+        private Timer segTimer;
+        private int timeoutms;
+
+        private SrSegment(byte[] data, int seqNbr, String checksum) {
+            super(data, seqNbr, checksum);
+        }
+
+        public SrSegment(byte[] data, int seqNbr, String checksum, int timeoutms, InetAddress addr, int port){
+            super(data, seqNbr, checksum);
+            this.timeoutms = timeoutms;
+            this.addr = addr;
+            this.port = port;
+        }
+
+        public void startTimer(){
+            segTimer = new Timer("timer");
+            segTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        DatagramSocket timerSocket = new DatagramSocket();
+                        System.err.println("Seg TIMEOUT fired");
+//                        DatagramPacket packet = new DatagramPacket();
+
+                    } catch (IOException e) {
+                        System.out.println("Exception during timeout resend");
+                        e.printStackTrace();
+                    }
+                }
+            },timeoutms);
+        }
+
+        public void stopTimer(){
+            if(segTimer != null) segTimer.cancel();
+        }
+
+        public void resetTimer(){
+            stopTimer();
+            startTimer();
+        }
+    }
+
+    static class SrSender implements Runnable{
+        private List<SrSegment> segmentList;
+
+        public SrSender(String msg, int segmentSize){
+//            initializeSegmentList()
+        }
+        @Override
+        public void run() {
+//            initialize
+        }
+    }
+
 }
 
 
