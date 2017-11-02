@@ -6,17 +6,18 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by kishorekolluru on 10/21/17.
  */
 public class Util {
-    public static int getSeqNum(int actualNum, int m){
+    public synchronized static int getSeqNum(int actualNum, int m){
         return  actualNum % (int)Math.pow(2,m);
     }
 
     public static int getActualWindowSeqNum(int snum, int oldWindStart, int oldWindEnd, int m){
-        for(int i=oldWindStart; i<= oldWindEnd; i++){
+        for(int i=oldWindStart; i< oldWindEnd; i++){
             if(i % (int)Math.pow(2, m) == snum){
                 return i;
             }
@@ -24,7 +25,7 @@ public class Util {
         return -1;
     }
 
-    public static String checksumString(byte[] bytes){
+    public synchronized static String checksumString(byte[] bytes){
         try {
             return calculateChecksum(bytes);
         } catch (NoSuchAlgorithmException e) {
@@ -33,11 +34,9 @@ public class Util {
         return null;
     }
 
-    private static String calculateChecksum(byte[] buf) throws NoSuchAlgorithmException {
-        int j = buf.length-1;
-        while( j>=0 && buf[j]==0)
-            j--;
-        buf = Arrays.copyOf(buf, j);
+    private synchronized static String calculateChecksum(byte[] buf) throws NoSuchAlgorithmException {
+        //remove trailing 0bytes
+        buf = removeTrailing0Bytes(buf);
 
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.update(buf);
@@ -47,47 +46,54 @@ public class Util {
             sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
         }
         return sb.toString();
+//        Checksum checksum = new CRC32();
+//        checksum.update(buf, 0, buf.length);
+//        long chksum = checksum.getValue();
+//        return String.valueOf(chksum);
     }
 
-    public static boolean isNotCorrupt(DatagramPacket packet) {
+    public synchronized static byte[] removeTrailing0Bytes(byte[] buf) {
+        int j = buf.length-1;
+        while( j>=0 && buf[j]==0)
+            j--;
+        buf = Arrays.copyOf(buf, j+1);
+        return buf;
+    }
+
+    public synchronized static boolean isSegmentNotCorrupt(DatagramPacket packet) {
         PipelinedProtocolRunner.Segment segment = extractSegment(packet);
 //        System.err.println("STRING :" + new String(segment.getData()));
         String computedChecksum = checksumString(segment.getData());
+        if(!computedChecksum.equals(segment.getChecksum()))
+            System.err.println("ERRORRRRRRR CHECKSUM");
         return computedChecksum.equals(segment.getChecksum());
     }
 
-    public static PipelinedProtocolRunner.Segment extractSegment(DatagramPacket packet) {
+    public synchronized static PipelinedProtocolRunner.Segment extractSegment(DatagramPacket packet) {
         String payl = new String(packet.getData());
         List<String> strList = new ArrayList<>();
         int firstSpaceInd = payl.indexOf(' ');
         int secSpaceInd = payl.indexOf(' ', firstSpaceInd + 1);
         //checksum
-        payl.substring(0, firstSpaceInd);
+        String chksum = payl.substring(0, firstSpaceInd);
         //seqNum
-        payl.substring(firstSpaceInd + 1, secSpaceInd);
+        String seqNum = payl.substring(firstSpaceInd + 1, secSpaceInd);
         //payload
-        payl.substring(secSpaceInd + 1);
+        String payload = payl.substring(secSpaceInd + 1);
 
         PipelinedProtocolRunner.Segment segment = new PipelinedProtocolRunner.Segment(
-                payl.substring(secSpaceInd + 1).getBytes(),
-                Integer.parseInt(payl.substring(firstSpaceInd + 1, secSpaceInd)),
-                payl.substring(0, firstSpaceInd));
+                removeTrailing0Bytes(payload.getBytes()),
+                Integer.parseInt(seqNum),
+                chksum);
         return segment;
     }
 
-    public static void main(String[] args) throws NoSuchAlgorithmException {
-        System.out.println(checksumString("this is a fd".getBytes()));
-        System.out.println(checksumString("this is a f5".getBytes()));
-        System.out.println(renderSeqNbrForTransport(0, 4));
-
-    }
-    public static byte corruptByte(byte b){
-        //shift left random number of bits
-        return (byte)(b << (int)(Math.random()*8));
-//        return (byte)(b | 1 << (int)(Math.random()*8));
+    public static byte[] corruptByte(byte[] bytes){
+        ThreadLocalRandom.current().nextBytes(bytes);
+        return bytes;
     }
 
-    public static String renderSeqNbrForTransport(int act, int m) {
+    public synchronized static String renderSeqNbrForTransport(int act, int m) {
         //convert the sbase actual number to seq num for transport and prepend with leading 0's if applicable (for exampl %03d)
 //        System.out.println(String.valueOf((int) Math.pow(2, m)).length());
         String format = "%0"+ String.valueOf((int)Math.pow(2,m)).length() +"d";
@@ -99,7 +105,7 @@ public class Util {
         byte[] bytes = new byte[byteObjects.length];
         // Unboxing byte values. (Byte[] to byte[])
         for(Byte b: byteObjects)
-            bytes[j++] = b.byteValue();
+            bytes[j++] = b;
         return bytes;
     }
 
@@ -120,5 +126,35 @@ public class Util {
             }
         }
         return dataList;
+    }
+
+    public static void main(String[] args) throws NoSuchAlgorithmException {
+        byte[] bytes= "asdfjkei7893urjfasdfsdfwef984iks".getBytes();
+//        System.out.println(checksumString(bytes));
+//        bytes[0] = (byte)(bytes[0] << 1);
+//        System.out.println(checksumString(bytes));
+        byte[] bytes2 = new byte[37];
+        int i=0;
+        for(byte b: bytes){
+            bytes2[i]= (b);
+            i++;
+        }
+        System.out.println("Print "+ new String(bytes));
+        System.out.println("Print "+ new String(corruptByte(bytes)));
+
+    }
+
+    public synchronized static int checksumAndGetAckNum(byte[] data) {
+        String ack = new String(data);
+//        System.out.println("Checking ACK " + ack);
+        int ackNum = -1;
+
+        byte[] databytes = ack.split(" ")[1].getBytes();
+        String chkSum = ack.split(" ")[0];
+        String computedChksum = Util.checksumString(databytes);
+        if (computedChksum.equals(chkSum)) {
+            ackNum = Integer.parseInt(new String(removeTrailing0Bytes(databytes)));
+        }
+        return ackNum;
     }
 }
