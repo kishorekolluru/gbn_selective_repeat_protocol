@@ -6,10 +6,8 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Sample$1$1.class" afterPath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Sample$1$1.class" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Sample$1.class" afterPath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Sample$1.class" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Sample.class" afterPath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Sample.class" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Util.class" afterPath="$PROJECT_DIR$/out/production/cn_assn1/org/kishore/http/Util.class" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/kishore/http/PipelinedProtocolRunner.java" afterPath="$PROJECT_DIR$/src/org/kishore/http/PipelinedProtocolRunner.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/kishore/http/Util.java" afterPath="$PROJECT_DIR$/src/org/kishore/http/Util.java" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -30,15 +28,16 @@
       <file leaf-file-name="PipelinedProtocolRunner.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/org/kishore/http/PipelinedProtocolRunner.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-136">
-              <caret line="29" column="24" lean-forward="false" selection-start-line="29" selection-start-column="24" selection-end-line="29" selection-end-column="24" />
+            <state relative-caret-position="55">
+              <caret line="677" column="19" lean-forward="false" selection-start-line="677" selection-start-column="18" selection-end-line="677" selection-end-column="19" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="e#8791#9588#0" expanded="true" />
-                <element signature="e#9587#9588#0" expanded="true" />
+                <element signature="e#8750#9547#0" expanded="true" />
+                <element signature="e#9546#9547#0" expanded="true" />
                 <element signature="class#Segment#0;class#PipelinedProtocolRunner#0" expanded="false" />
-                <element signature="e#16214#16928#0" expanded="true" />
-                <element signature="e#16927#16928#0" expanded="true" />
+                <element signature="class#SrSegment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+                <element signature="e#16173#16962#0" expanded="true" />
+                <element signature="e#16961#16962#0" expanded="true" />
                 <element signature="method#initializeSegmentList#0;class#SrSender#0;class#PipelinedProtocolRunner#0" expanded="false" />
                 <element signature="class#Sample#0" expanded="false" />
               </folding>
@@ -59,8 +58,8 @@
       <file leaf-file-name="Util.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/kishore/http/Util.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="214">
-              <caret line="142" column="69" lean-forward="true" selection-start-line="142" selection-start-column="69" selection-end-line="142" selection-end-column="69" />
+            <state relative-caret-position="2010">
+              <caret line="142" column="69" lean-forward="false" selection-start-line="142" selection-start-column="69" selection-end-line="142" selection-end-column="69" />
               <folding>
                 <element signature="e#402#403#0" expanded="true" />
                 <element signature="e#456#457#0" expanded="true" />
@@ -105,8 +104,11 @@
       <find>doom</find>
       <find>17</find>
       <find>r implemen</find>
-      <find>bit</find>
       <find>checksum</find>
+      <find>ACK loss</find>
+      <find>PKT loss</find>
+      <find>bit</find>
+      <find>ERRORRRRRRR</find>
     </findStrings>
     <replaceStrings>
       <replace>host</replace>
@@ -826,23 +828,23 @@
       <workItem from="1508785413302" duration="41279000" />
       <workItem from="1509136554407" duration="2690000" />
       <workItem from="1509287655008" duration="26022000" />
-      <workItem from="1509573920328" duration="9969000" />
+      <workItem from="1509573920328" duration="11171000" />
+      <workItem from="1509594756659" duration="111000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="149591000" />
+    <option name="totallyTimeSpent" value="150904000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
-    <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32876712" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3369863" sideWeight="0.51130855" order="10" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32956383" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.26027396" sideWeight="0.48869145" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.77397263" sideWeight="0.48869145" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.23287672" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -885,11 +887,57 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#8791#9588#0" expanded="true" />
-            <element signature="e#9587#9588#0" expanded="true" />
+            <element signature="e#8750#9547#0" expanded="true" />
+            <element signature="e#9546#9547#0" expanded="true" />
             <element signature="class#Segment#0;class#PipelinedProtocolRunner#0" expanded="false" />
-            <element signature="e#16214#16928#0" expanded="true" />
-            <element signature="e#16927#16928#0" expanded="true" />
+            <element signature="class#SrSegment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="e#16173#16962#0" expanded="true" />
+            <element signature="e#16961#16962#0" expanded="true" />
+            <element signature="method#initializeSegmentList#0;class#SrSender#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="class#Sample#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/kishore/http/Sample1.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" column="9" lean-forward="false" selection-start-line="12" selection-start-column="9" selection-end-line="12" selection-end-column="9" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/kishore/http/Util.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2010">
+          <caret line="142" column="69" lean-forward="true" selection-start-line="142" selection-start-column="69" selection-end-line="142" selection-end-column="69" />
+          <folding>
+            <element signature="e#402#403#0" expanded="true" />
+            <element signature="e#456#457#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/kishore/http/EchoClient.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="285">
+          <caret line="21" column="65" lean-forward="false" selection-start-line="21" selection-start-column="65" selection-end-line="21" selection-end-column="65" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/kishore/http/PipelinedProtocolRunner.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#8750#9547#0" expanded="true" />
+            <element signature="e#9546#9547#0" expanded="true" />
+            <element signature="class#Segment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="class#SrSegment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="e#16173#16962#0" expanded="true" />
+            <element signature="e#16961#16962#0" expanded="true" />
             <element signature="method#initializeSegmentList#0;class#SrSender#0;class#PipelinedProtocolRunner#0" expanded="false" />
             <element signature="class#Sample#0" expanded="false" />
           </folding>
@@ -939,11 +987,12 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#8791#9588#0" expanded="true" />
-            <element signature="e#9587#9588#0" expanded="true" />
+            <element signature="e#8750#9547#0" expanded="true" />
+            <element signature="e#9546#9547#0" expanded="true" />
             <element signature="class#Segment#0;class#PipelinedProtocolRunner#0" expanded="false" />
-            <element signature="e#16214#16928#0" expanded="true" />
-            <element signature="e#16927#16928#0" expanded="true" />
+            <element signature="class#SrSegment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="e#16173#16962#0" expanded="true" />
+            <element signature="e#16961#16962#0" expanded="true" />
             <element signature="method#initializeSegmentList#0;class#SrSender#0;class#PipelinedProtocolRunner#0" expanded="false" />
             <element signature="class#Sample#0" expanded="false" />
           </folding>
@@ -993,11 +1042,12 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#8791#9588#0" expanded="true" />
-            <element signature="e#9587#9588#0" expanded="true" />
+            <element signature="e#8750#9547#0" expanded="true" />
+            <element signature="e#9546#9547#0" expanded="true" />
             <element signature="class#Segment#0;class#PipelinedProtocolRunner#0" expanded="false" />
-            <element signature="e#16214#16928#0" expanded="true" />
-            <element signature="e#16927#16928#0" expanded="true" />
+            <element signature="class#SrSegment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="e#16173#16962#0" expanded="true" />
+            <element signature="e#16961#16962#0" expanded="true" />
             <element signature="method#initializeSegmentList#0;class#SrSender#0;class#PipelinedProtocolRunner#0" expanded="false" />
             <element signature="class#Sample#0" expanded="false" />
           </folding>
@@ -1047,11 +1097,12 @@
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#8791#9588#0" expanded="true" />
-            <element signature="e#9587#9588#0" expanded="true" />
+            <element signature="e#8750#9547#0" expanded="true" />
+            <element signature="e#9546#9547#0" expanded="true" />
             <element signature="class#Segment#0;class#PipelinedProtocolRunner#0" expanded="false" />
-            <element signature="e#16214#16928#0" expanded="true" />
-            <element signature="e#16927#16928#0" expanded="true" />
+            <element signature="class#SrSegment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="e#16173#16962#0" expanded="true" />
+            <element signature="e#16961#16962#0" expanded="true" />
             <element signature="method#initializeSegmentList#0;class#SrSender#0;class#PipelinedProtocolRunner#0" expanded="false" />
             <element signature="class#Sample#0" expanded="false" />
           </folding>
@@ -1150,14 +1201,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_40.jdk/Contents/Home/src.zip!/java/net/DatagramSocket.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6">
-          <caret line="653" column="16" lean-forward="false" selection-start-line="653" selection-start-column="16" selection-end-line="653" selection-end-column="16" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_40.jdk/Contents/Home/src.zip!/java/util/Timer.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="110">
@@ -1168,8 +1211,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/kishore/http/Util.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="214">
-          <caret line="142" column="69" lean-forward="true" selection-start-line="142" selection-start-column="69" selection-end-line="142" selection-end-column="69" />
+        <state relative-caret-position="2010">
+          <caret line="142" column="69" lean-forward="false" selection-start-line="142" selection-start-column="69" selection-end-line="142" selection-end-column="69" />
           <folding>
             <element signature="e#402#403#0" expanded="true" />
             <element signature="e#456#457#0" expanded="true" />
@@ -1177,17 +1220,26 @@
         </state>
       </provider>
     </entry>
+    <entry file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_40.jdk/Contents/Home/src.zip!/java/net/DatagramSocket.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="234">
+          <caret line="653" column="16" lean-forward="false" selection-start-line="653" selection-start-column="16" selection-end-line="653" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/kishore/http/PipelinedProtocolRunner.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-136">
-          <caret line="29" column="24" lean-forward="false" selection-start-line="29" selection-start-column="24" selection-end-line="29" selection-end-column="24" />
+        <state relative-caret-position="55">
+          <caret line="677" column="19" lean-forward="false" selection-start-line="677" selection-start-column="18" selection-end-line="677" selection-end-column="19" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="e#8791#9588#0" expanded="true" />
-            <element signature="e#9587#9588#0" expanded="true" />
+            <element signature="e#8750#9547#0" expanded="true" />
+            <element signature="e#9546#9547#0" expanded="true" />
             <element signature="class#Segment#0;class#PipelinedProtocolRunner#0" expanded="false" />
-            <element signature="e#16214#16928#0" expanded="true" />
-            <element signature="e#16927#16928#0" expanded="true" />
+            <element signature="class#SrSegment#0;class#PipelinedProtocolRunner#0" expanded="false" />
+            <element signature="e#16173#16962#0" expanded="true" />
+            <element signature="e#16961#16962#0" expanded="true" />
             <element signature="method#initializeSegmentList#0;class#SrSender#0;class#PipelinedProtocolRunner#0" expanded="false" />
             <element signature="class#Sample#0" expanded="false" />
           </folding>

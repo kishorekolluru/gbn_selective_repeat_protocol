@@ -31,7 +31,7 @@ public class PipelinedProtocolRunner {
         int port = 5001;
         seqNumRenderLength = String.valueOf((int)Math.pow(2, m)).length();
 
-        String alg = "GBN";
+        String alg = "SR";
         try {
             Thread sndr, rcvr;
             Runnable senderThread= null, recvThread = null;
@@ -112,7 +112,6 @@ public class PipelinedProtocolRunner {
             }
         }
 
-        private boolean isBitError = false;
         @Override
         public void run() {
             try {
@@ -135,7 +134,7 @@ public class PipelinedProtocolRunner {
                     //if ack corrupt or repeatAck then ignore packet
                     if (ackNum == -1 || ackNum == (lastAcked % Math.pow(2, m)))
                         continue;
-                    //Simulated loss
+                    //Simulated ack loss
                     if(Math.random() < PROBABILITY_ACK_LOSS){
                         System.out.println("Dropped ACK "+ ackNum);
                         continue;
@@ -456,6 +455,8 @@ public class PipelinedProtocolRunner {
                         DatagramPacket packet = new DatagramPacket(renderFullSgmnt(), Math.min(renderFullSgmnt().length, segmentSize), addr, port);
                         timerSocket.send(packet);
                         System.err.println("TIMEOUT Resent " + Util.getSeqNum(seqNbr, m)+":"+new String(data));
+                        stopTimer();
+                        startTimer();
                     } catch (IOException e) {
                         System.out.println("Exception during timeout resend");
                         e.printStackTrace();
@@ -554,7 +555,7 @@ public class PipelinedProtocolRunner {
                     toReceiver.receive(packet);
                     int ackNum = Util.checksumAndGetAckNum(packet.getData());//ack will have many null bytes, remove them
 
-                    if( Math.random() < 0.05){
+                    if( Math.random() < PROBABILITY_ACK_LOSS){
                         System.err.println("ACK LOSS " + ackNum);
                         continue;
                     }
@@ -591,8 +592,15 @@ public class PipelinedProtocolRunner {
         }
 
         private void sendSegment(SrSegment srSegment) throws IOException {
+
+            byte[] renderBytes = srSegment.renderFullSgmnt();
+
+            if(Math.random() < PROBABILITY_BIT_ERROR){
+                System.out.println("BIT ERORRR "+Util.getSeqNum(srSegment.getSeqNbr(),m));
+                renderBytes[renderBytes.length-3] = 34;
+            }
             DatagramPacket dgpacket = new DatagramPacket(
-                    srSegment.renderFullSgmnt(),
+                    renderBytes,
                     Math.min(srSegment.renderFullSgmnt().length, segmentSize));
             dgpacket.setPort(port);
             dgpacket.setAddress(addr);
