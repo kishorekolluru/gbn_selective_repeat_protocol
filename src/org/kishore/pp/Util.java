@@ -46,10 +46,6 @@ public class Util {
             sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
         }
         return sb.toString();
-//        Checksum checksum = new CRC32();
-//        checksum.update(buf, 0, buf.length);
-//        long chksum = checksum.getValue();
-//        return String.valueOf(chksum);
     }
 
     public synchronized static byte[] removeTrailing0Bytes(byte[] buf) {
@@ -62,7 +58,6 @@ public class Util {
 
     public synchronized static boolean isSegmentNotCorrupt(DatagramPacket packet) {
         PipelinedProtocol.Segment segment = extractSegment(packet);
-//        System.err.println("STRING :" + new String(segment.getData()));
         String computedChecksum = checksumString(segment.getData());
         if(!computedChecksum.equals(segment.getChecksum()))
             System.err.println("Checksum Error Seg"+segment.getSeqNbr());
@@ -95,7 +90,6 @@ public class Util {
 
     public synchronized static String renderSeqNbrForTransport(int act, int m) {
         //convert the sbase actual number to seq num for transport and prepend with leading 0's if applicable (for exampl %03d)
-//        System.out.println(String.valueOf((int) Math.pow(2, m)).length());
         String format = "%0"+ String.valueOf((int)Math.pow(2,m)).length() +"d";
        return String.format(format, act);
     }
@@ -114,7 +108,6 @@ public class Util {
         byte[] msgBytes = msg.getBytes();
         List<Byte> byteSeg = new ArrayList<>();
         int msgPartSize = payloadSize;
-//        int msgPartSize = segSize - 17 - String.valueOf((int)Math.pow(2,m)).length();
         System.out.println("Message part size = "+msgPartSize);
 
         //split the msg bytes into msgpartsize segments
@@ -128,11 +121,8 @@ public class Util {
         return dataList;
     }
 
-    public static void main(String[] args) throws NoSuchAlgorithmException {
+    /*public static void main(String[] args) throws NoSuchAlgorithmException {
         byte[] bytes= "asdfjkei7893urjfasdfsdfwef984iks".getBytes();
-//        System.out.println(checksumString(bytes));
-//        bytes[0] = (byte)(bytes[0] << 1);
-//        System.out.println(checksumString(bytes));
         byte[] bytes2 = new byte[37];
         int i=0;
         for(byte b: bytes){
@@ -142,7 +132,7 @@ public class Util {
         System.out.println("Print "+ new String(bytes));
         System.out.println("Print "+ new String(corruptByte(bytes)));
 
-    }
+    }*/
 
     public synchronized static int checksumAndGetAckNum(byte[] data) {
         String ack = new String(data);
