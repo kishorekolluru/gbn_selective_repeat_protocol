@@ -1,16 +1,14 @@
-package org.kishore.http;
+package org.kishore.pp;
 
 import java.io.*;
 import java.net.*;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static org.kishore.http.PipelinedProtocolRunner.host;
-
 /**
  * Created by kishorekolluru on 10/21/17.
  */
-public class PipelinedProtocolRunner {
+public class PipelinedProtocol {
     public static final String host = "localhost";
     public static int m;
     public static int WINDOW_SIZE;
@@ -21,8 +19,10 @@ public class PipelinedProtocolRunner {
 
     public static final boolean DEBUG = false;
     private static final String USER_DIR = System.getProperty("user.dir");
+
     public static void main(String[] args) {
         try {
+            //params
             int port = 5001;
             String alg = "SR";
             String msg = "THis is a message.Why do all this crap? This is implementation agnostic. One day, you might want to use this convenience on another implementation. Then you'll have to duplicate code, and hell begins. If you need a 3rd implementation too, and then add just one tiny bit of new functionality, you are doomed.";
@@ -31,32 +31,31 @@ public class PipelinedProtocolRunner {
             int segSize = 46;
             int timeout = 500;
 
-//            String filename = args[0];
-//            port = Integer.parseInt(args[1]);
-//            File inputFile = Paths.get(USER_DIR, filename).toFile();
-//            FileInputStream fis = new FileInputStream(inputFile);
-//            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-//            String line = null;
-//            int count = 0;
-//
-//
-//            StringBuilder builder = new StringBuilder();
-//            while((line = br.readLine())!=null) {
-//                if (count == 0)
-//                    alg = line.trim();
-//                else if (count == 1) {
-//                    m = Integer.parseInt(line.trim().split("\\s")[0]);
-//                    WINDOW_SIZE = Integer.parseInt(line.trim().split("\\s")[1]);
-//                } else if (count == 2)
-//                    timeout = Integer.parseInt(line.trim());
-//                else if(count==3)
-//                    segSize = Integer.parseInt(line.trim());
-//                else if(count > 3)
-//                    builder.append(line);
-//                count++;
-//            }
-//            msg = builder.toString();
-            //params
+            String filename = args[0];
+            port = Integer.parseInt(args[1]);
+            File inputFile = Paths.get(USER_DIR, filename).toFile();
+            FileInputStream fis = new FileInputStream(inputFile);
+            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+            String line = null;
+            int count = 0;
+
+
+            StringBuilder builder = new StringBuilder();
+            while((line = br.readLine())!=null) {
+                if (count == 0)
+                    alg = line.trim();
+                else if (count == 1) {
+                    m = Integer.parseInt(line.trim().split("\\s")[0]);
+                    WINDOW_SIZE = Integer.parseInt(line.trim().split("\\s")[1]);
+                } else if (count == 2)
+                    timeout = Integer.parseInt(line.trim());
+                else if(count==3)
+                    segSize = Integer.parseInt(line.trim());
+                else if(count > 3)
+                    builder.append(line);
+                count++;
+            }
+            msg = builder.toString();
 
             seqNumRenderLength = String.valueOf((int) Math.pow(2, m)).length();
 
@@ -323,7 +322,7 @@ public class PipelinedProtocolRunner {
                         break;
                     }
                     if(Math.random() < PROBABILITY_PKT_LOSS){
-                        System.err.println("Packet Lost "+Util.extractSegment(packet).getSeqNbr());
+                        System.err.println("Lost Packet "+Util.extractSegment(packet).getSeqNbr());
                         continue;
                     }
 //                    printStr("DATA RECEIVED " + Util.extractSegment(packet));
@@ -583,7 +582,7 @@ public class PipelinedProtocolRunner {
                     int ackNum = Util.checksumAndGetAckNum(packet.getData());//ack will have many null bytes, remove them
 
                     if( Math.random() < PROBABILITY_ACK_LOSS){
-                        System.err.println("ACK Lost " + ackNum);
+                        System.err.println("Lost ACK " + ackNum);
                         continue;
                     }
                     //if ack not corrupt - ackNum is 'm' based
@@ -686,7 +685,7 @@ public class PipelinedProtocolRunner {
                             }
                         }
                     }else{
-                        System.err.println("Packet Lost " + new String(packet.getData()));
+                        System.err.println("Lost Packet " + new String(packet.getData()));
                     }
                 }
                 toSender.close();
@@ -745,7 +744,7 @@ class Sample{
                             String msg = ("hi"+i);
                             if(i==2) msg = "end";
                             packet = new DatagramPacket(msg.getBytes(), l);
-                            packet.setAddress(InetAddress.getByName(host));
+                            packet.setAddress(InetAddress.getByName(PipelinedProtocol.host));
                             packet.setPort(5001);
                             socket.send(packet);
                         }
@@ -762,7 +761,7 @@ class Sample{
                                     System.out.println("Devil thread doing imp work...");
                                     DatagramPacket packet1 =
                                             new DatagramPacket("dv1".getBytes(), "dv1".getBytes().length,
-                                                    InetAddress.getByName(host),5001);
+                                                    InetAddress.getByName(PipelinedProtocol.host),5001);
                                     socket1.send(packet1);
 
                                     System.out.println("Imp has done its work");

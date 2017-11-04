@@ -1,4 +1,4 @@
-package org.kishore.http;
+package org.kishore.pp;
 
 import java.net.DatagramPacket;
 import java.security.MessageDigest;
@@ -61,7 +61,7 @@ public class Util {
     }
 
     public synchronized static boolean isSegmentNotCorrupt(DatagramPacket packet) {
-        PipelinedProtocolRunner.Segment segment = extractSegment(packet);
+        PipelinedProtocol.Segment segment = extractSegment(packet);
 //        System.err.println("STRING :" + new String(segment.getData()));
         String computedChecksum = checksumString(segment.getData());
         if(!computedChecksum.equals(segment.getChecksum()))
@@ -69,7 +69,7 @@ public class Util {
         return computedChecksum.equals(segment.getChecksum());
     }
 
-    public synchronized static PipelinedProtocolRunner.Segment extractSegment(DatagramPacket packet) {
+    public synchronized static PipelinedProtocol.Segment extractSegment(DatagramPacket packet) {
         String payl = new String(packet.getData());
         List<String> strList = new ArrayList<>();
         int firstSpaceInd = payl.indexOf(' ');
@@ -81,7 +81,7 @@ public class Util {
         //payload
         String payload = payl.substring(secSpaceInd + 1);
 
-        PipelinedProtocolRunner.Segment segment = new PipelinedProtocolRunner.Segment(
+        PipelinedProtocol.Segment segment = new PipelinedProtocol.Segment(
                 removeTrailing0Bytes(payload.getBytes()),
                 Integer.parseInt(seqNum),
                 chksum);
