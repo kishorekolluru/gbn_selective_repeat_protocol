@@ -1,7 +1,8 @@
 package org.kishore.http;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static org.kishore.http.PipelinedProtocolRunner.host;
@@ -19,22 +20,49 @@ public class PipelinedProtocolRunner {
     private static final double PROBABILITY_ACK_LOSS = 0.05;
 
     public static final boolean DEBUG = false;
-
+    private static final String USER_DIR = System.getProperty("user.dir");
     public static void main(String[] args) {
-
-        //params
-        String msg = "THis is a message.Why do all this crap? This is implementation agnostic. One day, you might want to use this convenience on another implementation. Then you'll have to duplicate code, and hell begins. If you need a 3rd implementation too, and then add just one tiny bit of new functionality, you are doomed.";
-        m = 4;
-        WINDOW_SIZE = 8;
-        int segSize = 46;
-        int timeout = 500;
-        int port = 5001;
-        seqNumRenderLength = String.valueOf((int)Math.pow(2, m)).length();
-
-        String alg = "SR";
         try {
+            int port = 5001;
+            String alg = "SR";
+            String msg = "THis is a message.Why do all this crap? This is implementation agnostic. One day, you might want to use this convenience on another implementation. Then you'll have to duplicate code, and hell begins. If you need a 3rd implementation too, and then add just one tiny bit of new functionality, you are doomed.";
+            m = 3;
+            WINDOW_SIZE = 5;
+            int segSize = 46;
+            int timeout = 500;
+
+//            String filename = args[0];
+//            port = Integer.parseInt(args[1]);
+//            File inputFile = Paths.get(USER_DIR, filename).toFile();
+//            FileInputStream fis = new FileInputStream(inputFile);
+//            BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+//            String line = null;
+//            int count = 0;
+//
+//
+//            StringBuilder builder = new StringBuilder();
+//            while((line = br.readLine())!=null) {
+//                if (count == 0)
+//                    alg = line.trim();
+//                else if (count == 1) {
+//                    m = Integer.parseInt(line.trim().split("\\s")[0]);
+//                    WINDOW_SIZE = Integer.parseInt(line.trim().split("\\s")[1]);
+//                } else if (count == 2)
+//                    timeout = Integer.parseInt(line.trim());
+//                else if(count==3)
+//                    segSize = Integer.parseInt(line.trim());
+//                else if(count > 3)
+//                    builder.append(line);
+//                count++;
+//            }
+//            msg = builder.toString();
+            //params
+
+            seqNumRenderLength = String.valueOf((int) Math.pow(2, m)).length();
+
+
             Thread sndr, rcvr;
-            Runnable senderThread= null, recvThread = null;
+            Runnable senderThread = null, recvThread = null;
             if (alg.equalsIgnoreCase("GBN")) {
                 senderThread = new GBNSender(port, msg, timeout, segSize);
                 recvThread = new GBNReceiver(port, segSize);
@@ -50,7 +78,7 @@ public class PipelinedProtocolRunner {
             sndr.join();
 
             Thread.sleep(2);
-            System.out.println("\nData reliably sent using "+alg+" protocol!!");
+            System.out.println("\nData reliably sent using " + alg + " protocol!");
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (SocketException e) {
@@ -82,8 +110,7 @@ public class PipelinedProtocolRunner {
         Timer timer;
         private boolean isDataDone = false;
 
-        public static void putIntoSmap(String str){
-            soutSenderMap.put(System.currentTimeMillis(), str);
+        public synchronized static void printStr(String str){
             System.out.println(str);
         }
         public GBNSender(int port, String msg, int timeoutms, int segSize) throws Exception {
@@ -115,10 +142,10 @@ public class PipelinedProtocolRunner {
         @Override
         public void run() {
             try {
-                Thread.sleep(10);
+                Thread.sleep(10);//Just in case the receiver thread is still starting
                 System.out.println("Initializing data array...");
                 dataList = Util.initializeDataArray(msg, payloadSize);
-                System.out.println("TOTAL packets :" + dataList.size());
+                System.out.println("TOTAL packets :" + dataList.size()+"\n");
 
                 while (!isDataDone) {
                     //send one window at a time
@@ -134,13 +161,14 @@ public class PipelinedProtocolRunner {
                     //if ack corrupt or repeatAck then ignore packet
                     if (ackNum == -1 || ackNum == (lastAcked % Math.pow(2, m)))
                         continue;
+
                     //Simulated ack loss
                     if(Math.random() < PROBABILITY_ACK_LOSS){
-                        System.out.println("Dropped ACK "+ ackNum);
+                        System.out.println("Lost ACK "+ ackNum);
                         continue;
                     }
 
-                    putIntoSmap("Received ACK " + ackNum);
+                    printStr("Received ACK " + ackNum);
                     lastAcked = Util.getActualWindowSeqNum(ackNum, windActStart, windActEnd, m);
                     //get the actual value till where the window has to slide
                     windActStart = lastAcked;
@@ -199,7 +227,7 @@ public class PipelinedProtocolRunner {
         }
         private void sendPacket(int nexSeq, int segSize, String host, DatagramSocket socket, int port, Segment segment) throws IOException {
             if( Math.random() < PROBABILITY_BIT_ERROR){
-                System.out.println("BIT error "+ segment.getSeqNbr());
+                printStr("Bit error Seg"+ segment.getSeqNbr());
                 segment.setData(Util.corruptByte(segment.getData()));
             }
             DatagramPacket dgpacket = new DatagramPacket(
@@ -208,7 +236,7 @@ public class PipelinedProtocolRunner {
             dgpacket.setPort(port);
             dgpacket.setAddress(InetAddress.getByName(host));
 
-            putIntoSmap("Sending Seg " + segment);
+            printStr("Sending Seg" + segment);
 
             socket.send(dgpacket);
         }
@@ -220,10 +248,10 @@ public class PipelinedProtocolRunner {
                 public void run() {
                     try {
                         DatagramSocket timerSocket = new DatagramSocket();
-                        System.err.print("RESENDING ");
+                        System.out.print("RESENDING ");
                         int i = windActStart;
                         while (i < lastSent) {
-                            System.err.print("Seg" + Util.getSeqNum(i, m) + " ");
+                            System.out.print("Seg" + Util.getSeqNum(i, m) + " ");
                             i++;
                         }
                         System.err.println("...");
@@ -259,7 +287,6 @@ public class PipelinedProtocolRunner {
         private int senderPort;
         private InetAddress senderAddr;
 
-        private int ack = -1;
         private String payload;
         private int expSeqNum;
         private int rcvrBase;
@@ -296,10 +323,10 @@ public class PipelinedProtocolRunner {
                         break;
                     }
                     if(Math.random() < PROBABILITY_PKT_LOSS){
-                        System.err.println("Packet LOST "+Util.extractSegment(packet));
+                        System.err.println("Packet Lost "+Util.extractSegment(packet).getSeqNbr());
                         continue;
                     }
-//                    putIntoSmap("DATA RECEIVED " + Util.extractSegment(packet));
+//                    printStr("DATA RECEIVED " + Util.extractSegment(packet));
                     // frst time received only
                     if(senderAddr==null && senderPort==-1){
                         senderAddr = packet.getAddress();
@@ -308,7 +335,7 @@ public class PipelinedProtocolRunner {
 
                     //check if new packet is expected. If not, send the old ack
                     if(Util.isSegmentNotCorrupt(packet) && isExpectedSeqNum(packet)){
-                        putIntoSmap("Received Seg " + Util.extractSegment(packet));
+                        putIntoSmap("Received Seg" + Util.extractSegment(packet));
                         Segment segment = Util.extractSegment(packet);
                         String msg = new String(segment.getData());
 //                        System.err.println("RECEIVED PACKET "+ rcvrBase+" :"+ msg);
@@ -337,7 +364,6 @@ public class PipelinedProtocolRunner {
                     +Util.renderSeqNbrForTransport(packetNum, m);
             this.ackSegSize = 32 +1 + seqNumRenderLength;
             DatagramPacket packet = createAck(payload);
-            //TODO loss logic
             putIntoSmap("ACK sent "+packetNum);
             socket.send(packet);
         }
@@ -544,6 +570,7 @@ public class PipelinedProtocolRunner {
         @Override
         public void run() {
             try {                   //SR SENDER
+                Thread.sleep(10);//Just in case the receiver thread is still starting
                 while (true) {
 
                     while (nSeqNum < segmentList.size() && nSeqNum - base < WINDOW_SIZE) {
@@ -556,13 +583,13 @@ public class PipelinedProtocolRunner {
                     int ackNum = Util.checksumAndGetAckNum(packet.getData());//ack will have many null bytes, remove them
 
                     if( Math.random() < PROBABILITY_ACK_LOSS){
-                        System.err.println("ACK LOSS " + ackNum);
+                        System.err.println("ACK Lost " + ackNum);
                         continue;
                     }
                     //if ack not corrupt - ackNum is 'm' based
                     if (ackNum != -1 ) {
                         int actSeqNum = Util.getActualWindowSeqNum(ackNum, base, nSeqNum, m);
-                        //if ack within frame
+                        //if ack within frame(-1 means outside frame)
                         if( actSeqNum >=0){
                             //set segment has been acked else ignore acks
                             segmentList.get(actSeqNum).setAcked(true);
@@ -582,9 +609,9 @@ public class PipelinedProtocolRunner {
                     if (base >= segmentList.size())
                         break;
                 }
+                //end connection to rcvr
                 toReceiver.send(new DatagramPacket("end".getBytes(), 3,addr, port));
                 toReceiver.close();
-                System.out.println("\nDATA SENDING SUCCESS using SR!!");
                 System.out.println("Sender disconnected...");
             } catch (Exception e) {
                 e.printStackTrace();
@@ -596,7 +623,7 @@ public class PipelinedProtocolRunner {
             byte[] renderBytes = srSegment.renderFullSgmnt();
 
             if(Math.random() < PROBABILITY_BIT_ERROR){
-                System.out.println("BIT ERORRR "+Util.getSeqNum(srSegment.getSeqNbr(),m));
+                System.out.println("Bit Error "+Util.getSeqNum(srSegment.getSeqNbr(),m));
                 renderBytes[renderBytes.length-3] = 34;
             }
             DatagramPacket dgpacket = new DatagramPacket(
@@ -604,9 +631,8 @@ public class PipelinedProtocolRunner {
                     Math.min(srSegment.renderFullSgmnt().length, segmentSize));
             dgpacket.setPort(port);
             dgpacket.setAddress(addr);
-            System.out.println("SENDING PACKET " + srSegment);
+            System.out.println("SENDING Packet " + srSegment);
 
-            //TODO timer disable
             srSegment.startTimer();
             nSeqNum++;
             toReceiver.send(dgpacket);
@@ -627,8 +653,6 @@ public class PipelinedProtocolRunner {
             this.segmentSize = segmentSize;
             this.rBase = 0;
             this.toSender = new DatagramSocket(port);
-            //TODO if changing to actual numbering scheme change below val to segSize(removeTrailing 0 bytes anyways)
-            // TODO, Util.getSeqNum, Util.getActualSeqNum
         }
         @Override
         public void run() {
@@ -643,7 +667,7 @@ public class PipelinedProtocolRunner {
                     }
                     setSenderAddrAndPort(packet);
 
-                    if(Math.random() > PROBABILITY_PKT_LOSS){
+                    if(Math.random() > PROBABILITY_PKT_LOSS){//pkt loss simulation
                         if(Util.isSegmentNotCorrupt(packet)) {
                             Segment segment = Util.extractSegment(packet);
                             if (isWithinCurrentWindow(segment.getSeqNbr())) {
@@ -662,7 +686,7 @@ public class PipelinedProtocolRunner {
                             }
                         }
                     }else{
-                        System.err.println("PKT LOSS " + new String(packet.getData()));
+                        System.err.println("Packet Lost " + new String(packet.getData()));
                     }
                 }
                 toSender.close();
@@ -672,15 +696,6 @@ public class PipelinedProtocolRunner {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-
-        private void printMessage() {
-            StringBuilder builder = new StringBuilder();
-            for(Segment s: segmentMap.values()){
-                builder.append(new String(s.getData()));
-            }
-            System.out.println("THE RECEIVED MSG is ..");
-            System.err.println(builder.toString());
         }
 
 
@@ -707,9 +722,7 @@ public class PipelinedProtocolRunner {
             byte[] payBytes= Util.removeTrailing0Bytes(payload.getBytes());
             DatagramPacket packet = new DatagramPacket(payBytes, payBytes.length,
                     senderAddr, senderPort);
-            //TODO loss logic
-//            if(Math.random())
-            System.out.println("ACK sent " + seqNum);
+            System.err.println("ACK sent " + seqNum);
             toSender.send(packet);
         }
     }

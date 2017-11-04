@@ -65,7 +65,7 @@ public class Util {
 //        System.err.println("STRING :" + new String(segment.getData()));
         String computedChecksum = checksumString(segment.getData());
         if(!computedChecksum.equals(segment.getChecksum()))
-            System.err.println("ERRORRRRRRR CHECKSUM");
+            System.err.println("Checksum Error Seg"+segment.getSeqNbr());
         return computedChecksum.equals(segment.getChecksum());
     }
 
