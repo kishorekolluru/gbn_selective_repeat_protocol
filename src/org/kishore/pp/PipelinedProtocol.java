@@ -689,7 +689,6 @@ public class PipelinedProtocol {
                     }
                 }
                 toSender.close();
-//                printMessage();
                 System.err.println("\nReceiver disconnected...");
 
             } catch (IOException e) {
@@ -729,109 +728,7 @@ public class PipelinedProtocol {
 }
 
 
-class Sample{
-    public static void main(String[] args) throws InterruptedException {
-        try {
-            Thread t = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-//                        Thread.sleep(2000);
-                        int l = "hi1".getBytes().length;
-                        DatagramSocket socket =  new DatagramSocket();
-                        DatagramPacket packet = null;
-                        for(int i=0; i<3; i++){
-                            String msg = ("hi"+i);
-                            if(i==2) msg = "end";
-                            packet = new DatagramPacket(msg.getBytes(), l);
-                            packet.setAddress(InetAddress.getByName(PipelinedProtocol.host));
-                            packet.setPort(5001);
-                            socket.send(packet);
-                        }
 
-                        System.err.println("Sender sent all...");
-
-                        Thread t1 = new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                int l = "hi1".getBytes().length;
-                                try {
-                                    Thread.sleep(1000);
-                                    DatagramSocket socket1 = new DatagramSocket();
-                                    System.out.println("Devil thread doing imp work...");
-                                    DatagramPacket packet1 =
-                                            new DatagramPacket("dv1".getBytes(), "dv1".getBytes().length,
-                                                    InetAddress.getByName(PipelinedProtocol.host),5001);
-                                    socket1.send(packet1);
-
-                                    System.out.println("Imp has done its work");
-//                                    while(true){
-//                                        packet1 = new DatagramPacket(new byte[l*3], l*3);
-//                                        socket1.receive(packet1);
-//                                        System.err.println("Devil gets back " + new String(packet1.getData()));
-//                                    }
-                                } catch (UnknownHostException e) {
-                                    e.printStackTrace();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                        t1.start();
-                        while(true){
-                            packet = new DatagramPacket(new byte[l*3], l*3);
-                            socket.receive(packet);
-                            System.err.println("Sender gets back " + new String(packet.getData()));
-                        }
-
-                    } catch (SocketException e) {
-                        e.printStackTrace();
-                    } catch (UnknownHostException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            });
-
-
-            t.start();
-
-            DatagramSocket socket = new DatagramSocket(5001);
-            int l = "hi1".getBytes().length;
-            DatagramPacket packet = new DatagramPacket(new byte[l],l);
-
-
-            //receiver wait
-            InetAddress addr = null;
-            int port = -1;
-            while(true){
-                socket.receive(packet);
-                String msg = new String(packet.getData());
-                System.out.println("Received ..."+ msg);
-//                if(msg.equals("end")) break;
-
-//                Thread.sleep(25);
-                if(addr == null && port ==-1){
-                    addr = packet.getAddress();
-                    port = packet.getPort();
-                }
-                packet = new DatagramPacket(msg.getBytes(),msg.getBytes().length , addr, port);
-                socket.send(packet);
-                System.out.println("Echoed back "+msg+"...");
-            }
-
-//            System.out.println("Ended");
-        } catch (SocketException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-}
 
 
 
