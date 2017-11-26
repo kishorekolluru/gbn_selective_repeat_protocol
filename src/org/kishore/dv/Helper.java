@@ -9,7 +9,7 @@ public class Helper {
         nbrName = line.split("\\s")[0];
         Double nbrCost = Double.parseDouble(line.split("\\s")[1]);
 
-        return router.new Neighbor(nbrName, nbrCost);
+        return new DistanceVector.Router.Neighbor(nbrName, nbrCost);
 
     }
 }
